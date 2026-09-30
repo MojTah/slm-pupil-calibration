@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite this version."
+type: software
+title: "SLM pupil calibration transfer"
+authors:
+  - family-names: Taheri
+    given-names: Mojtaba
+version: 0.1.0
+date-released: 2026-09-30
+url: "https://github.com/MojTah/slm-pupil-calibration"
+repository-code: "https://github.com/MojTah/slm-pupil-calibration"
+license: MIT

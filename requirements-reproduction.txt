@@ -1,0 +1,6 @@
+# Validated on Windows with Python 3.11.15; no fresh-environment install tested.
+numpy==2.4.6
+scipy==1.17.1
+matplotlib==3.11.0
+psutil==7.2.2
+pytest==9.1.1
