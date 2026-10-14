@@ -15,6 +15,16 @@ python -m pytest -q -p no:cacheprovider test_modal_simulation.py test_gain_phase
 
 All 80 tests passed in the existing scientific environment. A fresh dependency installation has not been tested. The numerical entrypoints use Windows `peak_wset`; other operating systems have not been validated.
 
+## Source-hold and iris diagnostic
+
+This check needs only the code and installed dependencies; it does not need saved numerical inputs:
+
+```powershell
+python check_source_hold.py --run-dir local-results/source-hold-check
+```
+
+It checks the source coefficient identity with the source hold removed, preserves detector box integration, and compares centered and translated iris support at 6D, 12D and 15D. It does not propagate sensor fields or recompute archived gains. The unity B/D gain ratio follows analytically only for the same iris support and a nonzero common readout gain; the archived 15D supports differ by four boundary modes.
+
 ## Numerical analyses and figures
 
 This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests above still run, but the following analysis and plotting commands cannot reproduce the paper's numerical results.
@@ -26,16 +36,19 @@ python verify_data.py
 python analyze_transfer.py --target B --runs modal-domain15-256 --run-dir local-results/replay-opaque15
 python analyze_finite_calibration.py --run-dir local-results/replay-finite-calibration
 python analyze_phase_pair.py --run-dir local-results/replay-pair
+python analyze_readout_sensitivity.py --run-dir local-results/readout-sensitivity
 python plot_transfer.py --run-dir local-results/opaque-transfer-20260915 --output-dir local-results/figures-B
 python plot_phase_pair.py --output-dir local-results/figures-pair
 python plot_finite_calibration.py --output-dir local-results/figures-finite
 python plot_publication.py
 ```
 
-These are frozen-study analyses, not generic interfaces for arbitrary pupils. They refuse existing output directories, check source and array identities, and contract saved arrays without repeating optical propagation. The original schematic/table renderer `plot_revision.py` also requires an empty `manuscript/` directory for its table output. No manuscript or private review correspondence is included in this repository.
+These are frozen-study analyses, not generic interfaces for arbitrary pupils. They refuse existing output directories, check source and array identities, and contract saved arrays without repeating optical propagation. The original schematic/table renderer `plot_revision.py` also requires an empty `manuscript/` directory for its table output.
+
+The readout diagnostic compares the archived least-squares vector, a native 15D least-squares vector, and a global quadrant-flux difference. It also separates fixed-vector domain drift from the unit-gain normalization identity of independently recalibrated domain-native vectors. It reads seven frozen runs: `finite-s3-domain6-128`, `modal-domain6-256`, `modal-domain12-256`, `modal-domain15-256`, `modal-opaque-domain6-256`, `modal-opaque-domain12-256`, and `modal-opaque-domain15-256-recovered-20260915`. Each needs its `result.json` and corresponding `SLM.npz` or `B.npz`; this diagnostic does not require the other analysis summaries or test-provenance files. No numerical inputs are distributed here.
 
 ## Scientific limits and provenance
 
-This is one fixed-geometry, monochromatic calculation with one unweighted readout. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. No independent end-to-end simulation, laboratory validation or instrument error-budget compliance is claimed.
+This is one fixed-geometry, monochromatic calculation. The primary results use a fixed unweighted least-squares readout; the additional readout diagnostic tests two alternatives without optimizing them. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. A domain-native gain of one is a normalization identity, not convergence evidence. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. No independent end-to-end simulation, laboratory validation or instrument error-budget compliance is claimed.
 
 OpenAI Codex assisted the formulation, code, tests, literature discovery, figures and writing. Analytical fixtures, directly commanded propagation and separate contractions provide computational checks; they do not replace author review. `CITATION.cff` identifies the software version. No DOI or journal acceptance is claimed.
