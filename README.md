@@ -25,6 +25,23 @@ python check_source_hold.py --run-dir local-results/source-hold-check
 
 It checks the source coefficient identity with the source hold removed, preserves detector box integration, and compares centered and translated iris support at 6D, 12D and 15D. It does not propagate sensor fields or recompute archived gains. The unity B/D gain ratio follows analytically only for the same iris support and a nonzero common readout gain; the archived 15D supports differ by four boundary modes.
 
+## Orthogonal strip-carrier comparison
+
+`OrthogonalStripModel` in `orthogonal_carrier.py` changes only the strip carrier from the original negative x direction to positive y, retaining the bright carrier, its period and the inherited optical operators. Its independent command tests run beside the existing modules without numerical input files:
+
+```powershell
+python -m pytest -q -p no:cacheprovider test_orthogonal_carrier.py
+```
+
+The added study compares both commands at 6D/256 with the same archived readout. The original 6D/128 propagation was reproduced bit for bit before the new 128- and 256-angle runs. This is a finite-domain command comparison, not an optimized design or a hardware ranking. The alternative's raw zero-offset span is much smaller, but a fixed offset relative to B remains; the target-zero reference is still required. Its absolute gain is not established as converged.
+
+`analyze_carrier.py` reads the original frozen inputs and the new alternative run through explicit paths. `plot_carrier_comparison.py` renders the resulting matched-grid curves and verifies their recorded hash. The alternative run must include its validated `result.json`, `SLM.npz` and `variant-provenance.json`. These numerical inputs, configurations and provenance records remain local and are not distributed. The local source-bound launch wrapper is not a public standalone CLI. With the required local archives, use fresh output directories:
+
+```powershell
+python analyze_carrier.py --source-root . --input-root PATH_TO_ORIGINAL_ARCHIVE --alternative-run PATH_TO_ORTHOGONAL_RUN --output local-results/carrier-comparison
+python plot_carrier_comparison.py --summary local-results/carrier-comparison/summary.json --curves local-results/carrier-comparison/phase-curves.csv --output-dir local-results/carrier-figure
+```
+
 ## Numerical analyses and figures
 
 This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests above still run, but the following analysis and plotting commands cannot reproduce the paper's numerical results.

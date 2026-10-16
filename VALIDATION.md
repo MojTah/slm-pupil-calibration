@@ -1,5 +1,15 @@
 # Release v0.1.0 validation
 
+## Orthogonal-carrier addition, 2026-10-16
+
+The existing 80 tests and six new independent command tests passed in the recorded Windows environment. The public-layout test run needs no numerical inputs. The adapter retains the production operators and changes only the strip carrier direction. A source-bound local runner reproduced all original 6D/128 Grams bit for bit, then validated the alternative at 128 and 256 angles. Every bright-control Gram block stayed bit-identical to its matched original. Timeout preservation, refusal to overwrite existing output and fresh recovery were exercised before the runs.
+
+Independent contractions checked both B/D transfer intervals, ideal pairing, integrated strip power and raw zero-point offsets. They agree with the producer's summaries within 3e-12 percentage points. This is an independent analysis of the same arrays, not an independent optical simulator. A 128-to-256 angular check leaves an absolute-gain change of 1.822e-4; it does not establish absolute-gain convergence. No alternative-domain or hardware result is claimed.
+
+The published analysis and plot entrypoints were executed from this repository against the private inputs. The scientific summaries and checks matched exactly; both CSV files and the rendered PNG were byte-identical to the reviewed results. Existing output directories are refused. No clean installation or additional operating system was tested.
+
+New numerical arrays, configurations, launch manifests and source snapshots remain local. Only the adapter, independent tests, saved-array analysis and figure renderer are added to this public repository. The original release verification below remains historical.
+
 Checked on 2026-09-30 in the existing Windows/Python 3.11.15 scientific environment.
 
 - 80 focused tests passed across held-pixel propagation, gain extrema, mean-response envelopes, phase pooling and finite calibration.
