@@ -13,7 +13,7 @@ python -m pip install -r requirements-reproduction.txt
 python -m pytest -q -p no:cacheprovider test_modal_simulation.py test_gain_phase.py test_phase_envelope.py test_phase_pair.py test_finite_calibration.py
 ```
 
-All 80 tests passed in the existing scientific environment. A fresh dependency installation has not been tested. The numerical entrypoints use Windows `peak_wset`; other operating systems have not been validated.
+The 91 public tests passed in the existing scientific environment; six additional resource-helper checks were run locally. A fresh dependency installation has not been tested. `runtime_resources.py` reads the historical process high-water mark using Windows `peak_wset` or Linux/macOS `getrusage`, with their respective units. Windows has native runtime evidence; Linux/macOS unit conversions were tested with simulated platform responses, without executing the optical workflow on either platform.
 
 ## Source-hold and iris diagnostic
 
@@ -25,6 +25,19 @@ python check_source_hold.py --run-dir local-results/source-hold-check
 
 It checks the source coefficient identity with the source hold removed, preserves detector box integration, and compares centered and translated iris support at 6D, 12D and 15D. It does not propagate sensor fields or recompute archived gains. The unity B/D gain ratio follows analytically only for the same iris support and a nonzero common readout gain; the archived 15D supports differ by four boundary modes.
 
+## Fresh 6D regeneration without archived inputs
+
+`reproduce_6d.py` constructs the fixed sampled reference (three samples per physical pixel, 128 modulation angles), then propagates the original strip command, orthogonal command and opaque control at 6D with 256 angles. It writes the readout, fresh Grams, numerical checks and four B/D transfer rows corresponding to the table titled “Matched 6D/256 calibration-transfer comparison.” It uses the published production optical operators; it is not an independently coded optical model.
+
+```powershell
+python -m pytest -q -p no:cacheprovider test_reproduce_6d.py
+python reproduce_6d.py --output local-results/fresh-6d --wall-budget 1200
+```
+
+No private array, configuration or provenance file is an input. Outputs always go to the directory you choose, which must not exist. Partial runs retain `result.json` and completed artifacts; there is no automatic resume. After an interruption, inspect that record and use a different output directory. `--canary` exercises the same pipeline at eight pupil pixels and eight angles; its values are not paper results.
+
+The complete fresh run took 694.3 seconds (11.6 minutes) and peaked at 1.276 GB on the tested Windows host. Its readout and all twelve coherent-endpoint/paired-error values exactly matched the archived comparison in that environment. Allow roughly 10–15 minutes and at least 3.7 GB available RAM on a comparable host; performance and floating-point details can differ elsewhere. Before each stage the driver checks available memory against twice its conservative estimate; it stops after a measured peak above 2 GB. The whole-run deadline and per-stage deadlines (600 seconds for the reference, 300 for each modal case) interrupt at Python boundaries. These are not OS-enforced limits. A long native operation can delay interruption, and the observed-memory check does not prevent a transient peak. This command covers the table titled “Matched 6D/256 calibration-transfer comparison,” not all historical domains, plots or finite-noise tables.
+
 ## Orthogonal strip-carrier comparison
 
 `OrthogonalStripModel` in `orthogonal_carrier.py` changes only the strip carrier from the original negative x direction to positive y, retaining the bright carrier, its period and the inherited optical operators. Its independent command tests run beside the existing modules without numerical input files:
@@ -33,7 +46,7 @@ It checks the source coefficient identity with the source hold removed, preserve
 python -m pytest -q -p no:cacheprovider test_orthogonal_carrier.py
 ```
 
-The added study compares both commands at 6D/256 with the same archived readout. The original 6D/128 propagation was reproduced bit for bit before the new 128- and 256-angle runs. This is a finite-domain command comparison, not an optimized design or a hardware ranking. The alternative's raw zero-offset span is much smaller, but a fixed offset relative to B remains; the target-zero reference is still required. Its absolute gain is not established as converged.
+The study compares both commands at 6D, 12D and 15D with 256 modulation angles and the same fixed readout. The original 6D/128 propagation was reproduced bit for bit before the alternative's angular and domain checks. The standalone public regeneration above covers 6D; the wider-domain numerical arrays remain private. This is a finite-domain command comparison, not an optimized design or a hardware ranking. The alternative's raw zero-offset span is much smaller, but a fixed offset relative to B remains; the target-zero reference is still required. Its absolute gain is not established as converged.
 
 `analyze_carrier.py` reads the original frozen inputs and the new alternative run through explicit paths. `plot_carrier_comparison.py` renders the resulting matched-grid curves and verifies their recorded hash. The alternative run must include its validated `result.json`, `SLM.npz` and `variant-provenance.json`. These numerical inputs, configurations and provenance records remain local and are not distributed. The local source-bound launch wrapper is not a public standalone CLI. With the required local archives, use fresh output directories:
 
@@ -44,7 +57,7 @@ python plot_carrier_comparison.py --summary local-results/carrier-comparison/sum
 
 ## Numerical analyses and figures
 
-This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests above still run, but the following analysis and plotting commands cannot reproduce the paper's numerical results.
+This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests and fresh 6D driver above still run, but the following saved-array analysis and plotting commands cannot reproduce the paper's numerical results.
 
 With the complete input package installed, verify its hashes and write replays to new directories:
 
@@ -60,12 +73,12 @@ python plot_finite_calibration.py --output-dir local-results/figures-finite
 python plot_publication.py
 ```
 
-These are frozen-study analyses, not generic interfaces for arbitrary pupils. They refuse existing output directories, check source and array identities, and contract saved arrays without repeating optical propagation. The original schematic/table renderer `plot_revision.py` also requires an empty `manuscript/` directory for its table output.
+These are frozen-study entrypoints, not generic interfaces for arbitrary pupils. The saved-array analysis commands require fresh output directories, check source and array identities, and contract saved arrays without repeating optical propagation. Plot renderers can replace files in their chosen output locations, so use fresh directories for separate renders. The original schematic/table renderer `plot_revision.py` writes its table into `manuscript/`.
 
 The readout diagnostic compares the archived least-squares vector, a native 15D least-squares vector, and a global quadrant-flux difference. It also separates fixed-vector domain drift from the unit-gain normalization identity of independently recalibrated domain-native vectors. It reads seven frozen runs: `finite-s3-domain6-128`, `modal-domain6-256`, `modal-domain12-256`, `modal-domain15-256`, `modal-opaque-domain6-256`, `modal-opaque-domain12-256`, and `modal-opaque-domain15-256-recovered-20260915`. Each needs its `result.json` and corresponding `SLM.npz` or `B.npz`; this diagnostic does not require the other analysis summaries or test-provenance files. No numerical inputs are distributed here.
 
 ## Scientific limits and provenance
 
-This is one fixed-geometry, monochromatic calculation. The primary results use a fixed unweighted least-squares readout; the additional readout diagnostic tests two alternatives without optimizing them. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. A domain-native gain of one is a normalization identity, not convergence evidence. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. No independent end-to-end simulation, laboratory validation or instrument error-budget compliance is claimed.
+This is one fixed-geometry, monochromatic calculation. The primary results use a fixed unweighted least-squares readout; the additional readout diagnostic tests two alternatives without optimizing them. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. A domain-native gain of one is a normalization identity, not convergence evidence. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. A separately coded 6D optical calculation reported in the revised paper agrees with the production gains within 1.2e-14 relative difference, sharing the same optical model and fixed readout. The public regeneration driver uses the production operators. Neither calculation establishes laboratory validity or instrument error-budget compliance.
 
 OpenAI Codex assisted the formulation, code, tests, literature discovery, figures and writing. Analytical fixtures, directly commanded propagation and separate contractions provide computational checks; they do not replace author review. `CITATION.cff` identifies the software version. No DOI or journal acceptance is claimed.

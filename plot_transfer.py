@@ -32,6 +32,7 @@ def main():
     labels={'nominal':'Phase zero','minimum_gain':'Minimum SLM gain','maximum_gain':'Maximum SLM gain'}
     plt.rcParams.update({'font.size':9,'axes.titlesize':9,'legend.fontsize':8,'pdf.fonttype':42})
     styles={'nominal':'-','minimum_gain':'--','maximum_gain':':' }
+    widths={'nominal':2.6,'minimum_gain':1.5,'maximum_gain':1.5}
     fig,axes=plt.subplots(2,2,figsize=(6.5,5.4),layout='constrained')
     ax=axes[0,0]
     for i,r in enumerate(result['records']):
@@ -46,21 +47,26 @@ def main():
     for policy in colors:
         rr=[v for v in rows if v['run']==largest and v['policy']==policy]
         x=[float(v['piston_rad']) for v in rr]
-        axes[0,1].plot(x,[float(v['transfer_contribution_rad'])*1000 for v in rr],color=colors[policy],linestyle=styles[policy],label=labels[policy])
-        axes[1,0].plot(x,[float(v['reset_total_error_rad']) for v in rr],color=colors[policy],linestyle=styles[policy],label=labels[policy])
-        axes[1,1].semilogy(x,[float(v['crossover_detected_photons']) if v['crossover_detected_photons'] else float('nan') for v in rr],color=colors[policy],linestyle=styles[policy])
+        axes[0,1].plot(x,[float(v['transfer_contribution_rad'])*1000 for v in rr],color=colors[policy],linestyle=styles[policy],lw=widths[policy],label=labels[policy])
+        axes[1,0].plot(x,[float(v['reset_total_error_rad']) for v in rr],color=colors[policy],linestyle=styles[policy],lw=widths[policy])
+        # The crossover is undefined at exact zero piston, even if an input gives a finite value.
+        crossover=[float(v['crossover_detected_photons']) if float(v['piston_rad']) != 0 and v['crossover_detected_photons'] else float('nan') for v in rr]
+        axes[1,1].semilogy(x,crossover,color=colors[policy],linestyle=styles[policy],lw=widths[policy])
         summaries[policy]={k:max(abs(float(v[k])) for v in rr) for k in ['transfer_contribution_rad','reset_total_error_rad','unreset_total_error_rad']}
         summaries[policy]['at_0.1_rad']=min(rr,key=lambda v:abs(float(v['piston_rad'])-.1))
         summaries[policy]['at_1_rad']=rr[-1]
     axes[1,0].plot(x,[float(v['self_calibration_error_rad']) for v in rr],color='black',linestyle='-.',label='Target self-calibration')
+    axes[1,0].legend(frameon=False,loc='upper left',fontsize=7)
     axes[0,1].set(ylabel='Transfer contribution (mrad)',title='(b) After target zero reset')
     axes[1,0].set(ylabel='Total piston error (rad)',title='(c) Transfer + nonlinearity')
     axes[1,1].set(ylabel='Target detected photons, N*',title='(d) Conditional crossover')
+    axes[1,1].text(.04,.96,'At a = 0:\nN* undefined',transform=axes[1,1].transAxes,
+                   ha='left',va='top',fontsize=7)
     for ax in [axes[0,1],*axes[1]]:
         ax.set_xlabel('Differential piston (rad)');ax.grid(alpha=.2)
-    handles,labels=axes[1,0].get_legend_handles_labels()
-    fig.legend(handles,labels,loc='outside lower center',ncol=2)
-    fig.suptitle(f'Target {target}: 15D / 256 angles in panels (b–d)',fontsize=10)
+    handles,labels=axes[0,1].get_legend_handles_labels()
+    fig.legend(handles,labels,loc='outside lower center',ncol=3)
+    fig.suptitle(f'Target {target}: 15D / 256 angles in panels (b–d)\nPhase-zero and maximum-gain curves nearly coincide',fontsize=9)
     for ext in ['png','pdf']:fig.savefig(out/f'transfer.{ext}',dpi=300)
     plt.close(fig)
     state={'target':target,'summaries':summaries,'source_result_sha256':hashlib.sha256((folder/'result.json').read_bytes()).hexdigest(),'plot_source_lf':hashlib.sha256(Path(__file__).read_bytes().replace(b'\r\n',b'\n')).hexdigest(),'elapsed_seconds':time.perf_counter()-start}

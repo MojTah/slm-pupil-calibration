@@ -11,6 +11,7 @@ import time
 from run_modal import direct_check
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 import scipy
 from modal_simulation import ModalModel
 from piston_basis import gram_diagnostics
@@ -34,7 +35,7 @@ def main():
     if original['status']=='PARTIAL' and (not original.get('deadline_expired') or original['checks'] or original['unfinished_artifacts']):p.error('Only a clean saved basis interrupted by the deadline may be recovered')
     block,=original['blocks'];artifact=parent/'B.npz'
     if block['family']!='B' or block['artifact']!='B.npz' or digest(artifact)!=block['sha256']:p.error('B basis identity mismatch')
-    sources=['modal_simulation.py','test_modal_simulation.py','run_modal.py','simulation.py','piston_basis.py','run_pilot.py']
+    sources=['runtime_resources.py','modal_simulation.py','test_modal_simulation.py','run_modal.py','simulation.py','piston_basis.py','run_pilot.py']
     identity=dict(original['identity'])
     for n in sources:
         if text_hash(ROOT/n)!=identity[n] or text_hash(parent/'source-snapshot'/n)!=identity[n]:p.error('Producer source identity changed: '+n)
@@ -64,7 +65,7 @@ def main():
                 gram_diagnostics(value)
             gram_diagnostics(basis['flux_gram']-basis['gram'].sum(axis=(0,1)),parent_trace=float(np.trace(basis['flux_gram']).real))
             check=direct_check(ModalModel(g,c['iris']),basis,'B',-.37,0.,c)
-            if psutil.Process().memory_info().peak_wset>2_000_000_000:raise MemoryError('Observed peak exceeds2GB')
+            if peak_rss_bytes()>2_000_000_000:raise MemoryError('Observed peak exceeds2GB')
         if digest(original_path)!=original_hash or digest(artifact)!=block['sha256']:raise ValueError('Parent changed')
         if any(text_hash(ROOT/n)!=identity[n] for n in sources+['validate_saved_modal.py']):raise ValueError('Source changed')
         if digest(ROOT/'modal-tests.json')!=identity['prototype_test_record'] or text_hash(config_path)!=identity['config']:raise ValueError('Test or configuration changed')
@@ -75,7 +76,7 @@ def main():
         state.update(status='COMPLETE_VALIDATED',blocks=[block],checks=[check])
     except (Exception,KeyboardInterrupt) as e:
         state.update(status='PARTIAL',error=type(e).__name__+': '+str(e))
-    state.update(elapsed_seconds=time.perf_counter()-start,peak_rss_bytes=psutil.Process().memory_info().peak_wset,deadline_expired=deadline.expired.is_set() if deadline else False)
+    state.update(elapsed_seconds=time.perf_counter()-start,peak_rss_bytes=peak_rss_bytes(),deadline_expired=deadline.expired.is_set() if deadline else False)
     state['unfinished_artifacts']=[x.name for x in out.iterdir() if x.suffix in ('.tmp','.npz') and x.name not in [b['artifact'] for b in state['blocks']]]
     write_json(out/'result.json',state)
     print(json.dumps({k:state.get(k) for k in ['status','elapsed_seconds','peak_rss_bytes','deadline_expired','error']}))

@@ -13,6 +13,7 @@ for key in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):
 
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 import scipy
 from modal_simulation import ModalModel, build_modal_basis
 from run_pilot import ROOT, WallDeadline, text_hash, write_json
@@ -69,7 +70,7 @@ def main():
     estimated=n*n*16*32+side*side*9*16*2
     if estimated>2_000_000_000 or psutil.virtual_memory().available<2*estimated:
         parser.error('Memory admission failed')
-    sources=('modal_simulation.py','test_modal_simulation.py','run_modal.py','simulation.py','piston_basis.py','run_pilot.py')
+    sources=('runtime_resources.py','modal_simulation.py','test_modal_simulation.py','run_modal.py','simulation.py','piston_basis.py','run_pilot.py')
     source_bytes={p:(ROOT/p).read_bytes() for p in sources}
     identities={p:hashlib.sha256(v.replace(b'\r\n',b'\n')).hexdigest() for p,v in source_bytes.items()}
     test_path=ROOT/'modal-tests.json'
@@ -85,9 +86,8 @@ def main():
            'estimated_bytes':estimated,'blocks':[],'checks':[],
            'runtime':{'python':platform.python_version(),'numpy':np.__version__,'scipy':scipy.__version__,'fft_workers':1},
            'interpretation':'Direct reduction validation for a distinct modal operator; angular/domain convergence not established'}
-    process=psutil.Process()
     def save():
-        state.update(elapsed_seconds=time.perf_counter()-start,peak_rss_bytes=process.memory_info().peak_wset,
+        state.update(elapsed_seconds=time.perf_counter()-start,peak_rss_bytes=peak_rss_bytes(),
                      updated_utc=datetime.now(timezone.utc).isoformat())
         write_json(folder/'result.json',state)
     save()
@@ -105,7 +105,7 @@ def main():
                 state['active']=family; save()
                 print(json.dumps({'started':family,'seconds':time.perf_counter()-start}),flush=True)
                 basis=build_modal_basis(model,family,config['modulation'],config['angles'],config['detector_diameters'])
-                if process.memory_info().peak_wset>2_000_000_000: raise MemoryError('Observed basis peak exceeds2GB')
+                if peak_rss_bytes()>2_000_000_000: raise MemoryError('Observed basis peak exceeds2GB')
                 path=folder/(family+'.npz')
                 state['publishing']=path.name; save()
                 with path.with_suffix('.tmp').open('wb') as handle:
@@ -116,7 +116,7 @@ def main():
                 save()
                 case='B' if family=='B' else 'C'
                 state['checks'].append(direct_check(model,basis,case,-.37,0. if family=='B' else np.pi/2,config))
-                if process.memory_info().peak_wset>2_000_000_000: raise MemoryError('Observed peak exceeds2GB')
+                if peak_rss_bytes()>2_000_000_000: raise MemoryError('Observed peak exceeds2GB')
                 save(); del basis
             if any(text_hash(ROOT/p)!=v for p,v in identities.items() if p in sources):
                 raise RuntimeError('Source identity changed during run')

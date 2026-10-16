@@ -66,7 +66,7 @@ def main():
         ax.add_patch(Rectangle((x,.65),1.8,.7,facecolor='#e8eef2',edgecolor='#263744'))
         ax.text(x+.9,1,name,ha='center',va='center',fontsize=8.5)
         ax.text(x+.9,.38,detail,ha='center',va='center',fontsize=7.5)
-        if i < 4: ax.annotate('',xy=(x+2,.99),xytext=(x+1.8,.99),arrowprops=dict(arrowstyle='->'))
+        if i < 4: ax.annotate('',xy=(x+2,.99),xytext=(x+1.8,.99),arrowprops=dict(arrowstyle='-|>',mutation_scale=12,lw=1.2,shrinkA=0,shrinkB=0,color='#263744'))
     ax.text(5,1.7,'(a) Scalar propagation sequence (schematic)',ha='center')
     for i, (name, shadow, detail) in enumerate([
             ('B: opaque target', '#ffffff', 'bright: no carrier\ncentered iris'),

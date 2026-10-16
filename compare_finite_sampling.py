@@ -10,7 +10,7 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import numpy as np
-import psutil
+from runtime_resources import peak_rss_bytes
 
 from piston_basis import evaluate, gram_diagnostics, readout_matrices, readout_moments
 from phase_envelope import phase_range, overlap_coefficients
@@ -198,10 +198,10 @@ def main():
                               'Finite domain sensitivity and higher-sampling C/B transfer remain open'],
               'run_result_hashes': {n: hashlib.sha256((ROOT/'local-results'/n/'result.json').read_bytes()).hexdigest() for n in cache},
               'source_hashes_lf': {n: hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n', b'\n')).hexdigest()
-                                   for n in ('compare_finite_sampling.py', 'piston_basis.py', 'simulation.py', 'phase_envelope.py')},
+                                   for n in ('compare_finite_sampling.py', 'piston_basis.py', 'simulation.py', 'phase_envelope.py', 'runtime_resources.py')},
               'artifacts': {stem+extension: hashlib.sha256((folder/(stem+extension)).read_bytes()).hexdigest()
                             for extension in ('.png', '.pdf', '.csv')},
-              'elapsed_seconds': time.perf_counter()-start, 'peak_rss_bytes': psutil.Process().memory_info().peak_wset}
+              'elapsed_seconds': time.perf_counter()-start, 'peak_rss_bytes': peak_rss_bytes()}
     if envelopes:
         result['continuous_phase_checks'] = {
             **{'maximum_'+end+'_change_rad': max(abs(a[end]-b[end]) for a,b in zip(*envelopes))

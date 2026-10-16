@@ -11,6 +11,7 @@ for key in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):
     os.environ[key]='1'
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 
 from gain_phase import gain_coefficients, gain_phase_range, gain_value
 from piston_basis import evaluate, readout_matrices, readout_moments
@@ -63,7 +64,7 @@ def main():
     tests=json.loads((ROOT/'gain-tests.json').read_text())
     if tests['status']!='PASS' or any(hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest()!=h for n,h in tests['sources_lf'].items()):
         raise ValueError('Gain tests are failed or stale')
-    sources=('analyze_transfer.py','gain_phase.py','test_gain_phase.py','piston_basis.py','simulation.py','modal_simulation.py')
+    sources=('runtime_resources.py','analyze_transfer.py','gain_phase.py','test_gain_phase.py','piston_basis.py','simulation.py','modal_simulation.py')
     identity={n:hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest() for n in sources}
     with WallDeadline(30):
         reference,ref,ref_id=load_gram('finite-s3-domain6-128')
@@ -136,14 +137,14 @@ def main():
             comparisons.append({'lower':lo,'higher':hi,'changes':changes,'targets_met':all(v['scale_change']<.001 and v['max_transfer_contribution_change_rad']<.005 for v in changes.values()),
                                 'interpretation':'Gain-envelope extremizers can have different phases on each grid; this compares nominal and extremal transfer policies, not a uniform pointwise-in-phase error bound'})
         if any(hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest()!=h for n,h in identity.items()):raise ValueError('Analysis source changed')
-        if psutil.Process().memory_info().peak_wset>2_000_000_000:raise MemoryError('Observed peak exceeds2GB')
+        if peak_rss_bytes()>2_000_000_000:raise MemoryError('Observed peak exceeds2GB')
         folder.mkdir();snapshot=folder/'source-snapshot';snapshot.mkdir()
         for n in sources:(snapshot/n).write_bytes((ROOT/n).read_bytes())
         (snapshot/'gain-tests.json').write_bytes((ROOT/'gain-tests.json').read_bytes())
         with (folder/'curves.csv').open('w',newline='') as f:
             w=csv.DictWriter(f,fieldnames=list(rows[0]) if rows else ['run','policy','piston_rad']);w.writeheader();w.writerows(rows)
         result={'status':'COMPLETE_ANALYSIS','records':records,'comparisons':comparisons,'rows':len(rows),'sources_lf':identity,'reference':ref_id,'weight_sha256':weights_hash,'origin':origin,
-                'elapsed_seconds':time.perf_counter()-start,'peak_rss_bytes':psutil.Process().memory_info().peak_wset,'curves_sha256':file_hash(folder/'curves.csv'),'gain_tests_sha256':file_hash(ROOT/'gain-tests.json'),
+                'elapsed_seconds':time.perf_counter()-start,'peak_rss_bytes':peak_rss_bytes(),'curves_sha256':file_hash(folder/'curves.csv'),'gain_tests_sha256':file_hash(ROOT/'gain-tests.json'),
                 'noninvertible_runs':[r['run'] for r in records if r['status']=='NONINVERTIBLE_CALIBRATION'],
                 'target':args.target,
                 'limitations':(['D target only; matched modal B missing'] if args.target=='D' else ['B target is the matched centered-iris opaque control, not an unfiltered telescope pupil'])+['Unknown quasistatic phase is a bounded nuisance, not a probability distribution','Calibration photon uncertainty excluded','No universal hardware tolerance or convergence of prior failed absolute observables claimed','Unreset errors and crossover counts are policy-specific, not full-phase extrema','An interior phase with g_C=g_X has zero transfer contribution and no finite crossover','Extremal-policy comparisons compare envelopes, not identical-phase errors','Gain extrema use a numerical stationary-point solver, not a certified enclosure']}

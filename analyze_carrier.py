@@ -29,7 +29,7 @@ def main():
         parser.error('Require a fresh output directory')
     sys.path.insert(0, str(args.source_root.resolve()))
     import numpy as np
-    import psutil
+    from runtime_resources import peak_rss_bytes
     from scipy.linalg import eigvalsh
     from scipy.optimize import minimize_scalar
     import analyze_transfer
@@ -43,7 +43,7 @@ def main():
     started = datetime.now(timezone.utc).isoformat()
     start = time.perf_counter()
     identities = {}
-    source_names = ('analyze_transfer.py', 'gain_phase.py', 'phase_envelope.py',
+    source_names = ('runtime_resources.py', 'analyze_transfer.py', 'gain_phase.py', 'phase_envelope.py',
                     'phase_pair.py', 'piston_basis.py', 'simulation.py', 'run_pilot.py')
     source_hashes = {n: digest(args.source_root/n) for n in source_names}
 
@@ -170,7 +170,7 @@ def main():
                         'e_D_percent': float(100*(g_d/gain-1)),
                         'zero_offset_vs_B_rad': float(mean-r_b)})
         assert all(digest(args.source_root/n) == h for n, h in source_hashes.items())
-        assert psutil.Process().memory_info().peak_wset < 2_000_000_000
+        assert peak_rss_bytes() < 2_000_000_000
         args.output.mkdir(parents=True)
         for filename, records in [('summary.csv', rows), ('phase-curves.csv', curves)]:
             with (args.output/filename).open('w', newline='', encoding='utf-8') as handle:
@@ -178,7 +178,7 @@ def main():
                 writer.writeheader(); writer.writerows(records)
         result = {'status': 'PASS', 'started_utc': started,
             'elapsed_seconds': time.perf_counter()-start,
-            'peak_rss_bytes': psutil.Process().memory_info().peak_wset,
+            'peak_rss_bytes': peak_rss_bytes(),
             'readout_sha256': weight_hash, 'results': rows, 'validation': checks,
             'input_identities': identities, 'source_sha256_raw': source_hashes,
             'analysis_source_sha256': digest(Path(__file__)),

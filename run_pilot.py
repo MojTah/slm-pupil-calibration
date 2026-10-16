@@ -23,6 +23,7 @@ os.environ.setdefault("MKL_NUM_THREADS", "1")
 
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 
 from simulation import Configuration, OpticalModel, compare_response, crop_detector, normalize_response
 
@@ -100,7 +101,7 @@ def main():
     for name, value in preflight["source_hashes"].items():
         if value != text_hash(ROOT / name):
             parser.error("Preflight source identity is stale: " + name)
-    identity = {name: text_hash(ROOT / name) for name in ("simulation.py", "run_pilot.py", "test_simulation.py")}
+    identity = {name: text_hash(ROOT / name) for name in ("simulation.py", "run_pilot.py", "test_simulation.py", "runtime_resources.py")}
     identity["config"] = text_hash(args.config)
     output = run_dir / "result.json"
     if args.resume:
@@ -153,9 +154,8 @@ def main():
         rates.setdefault(c["modulation"], []).append(c["elapsed_seconds"] / c["work_proxy"])
 
     def checkpoint():
-        memory = process.memory_info()
         state.update(elapsed_wall_seconds=previous_elapsed + time.perf_counter() - start,
-                     peak_rss_bytes=max(state.get("peak_rss_bytes", 0), getattr(memory, "peak_wset", memory.rss)),
+                     peak_rss_bytes=max(state.get("peak_rss_bytes", 0), peak_rss_bytes()),
                      cpu_seconds=previous_cpu + sum(process.cpu_times()[:2]) - cpu_start,
                      updated_utc=datetime.now(timezone.utc).isoformat(),
                      process_id=os.getpid())

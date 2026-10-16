@@ -11,6 +11,7 @@ for key in ('OMP_NUM_THREADS', 'OPENBLAS_NUM_THREADS', 'MKL_NUM_THREADS'):
     os.environ[key] = '1'
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 from analyze_transfer import DEFAULT_RUNS, B_TARGET_RUNS, load_gram, file_hash
 from finite_calibration import finite_poke, inverse_diagnostics, compare_diagnostics
 from phase_pair import paired_matrices
@@ -22,7 +23,7 @@ ROOT = Path(__file__).resolve().parent
 POKES = [.005, .01, .025, .05, .1, .2]
 PHOTONS = [10**6, 10**8, 10**10, 10**12]
 KAPPAS = [0., .1, 1.]
-SOURCES = ['analyze_finite_calibration.py', 'finite_calibration.py',
+SOURCES = ['runtime_resources.py', 'analyze_finite_calibration.py', 'finite_calibration.py',
            'test_finite_calibration.py', 'analyze_transfer.py', 'phase_pair.py',
            'piston_basis.py', 'simulation.py', 'modal_simulation.py', 'run_pilot.py']
 
@@ -137,7 +138,7 @@ def main():
             if any(lf_hash(n) != h for n,h in source_ids.items()): raise ValueError('Source drift')
             if file_hash(ROOT/'finite-calibration-tests.json') != test_hash: raise ValueError('Tests changed')
             if file_hash(prior_path) != state['prior_pair_result_sha256']: raise ValueError('Prior packet changed')
-            peak = psutil.Process().memory_info().peak_wset
+            peak = peak_rss_bytes()
             if peak > 2_000_000_000: raise MemoryError('Observed peak exceeds2GB')
             with (out/'curves.csv').open('w', newline='') as stream:
                 writer = csv.DictWriter(stream, fieldnames=list(rows[0])); writer.writeheader(); writer.writerows(rows)

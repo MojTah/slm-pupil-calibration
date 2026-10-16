@@ -13,7 +13,7 @@ for key in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
     os.environ[key] = "1"
 ROOT = Path(__file__).resolve().parent
 import numpy as np
-import psutil
+from runtime_resources import peak_rss_bytes
 from modal_simulation import ModalModel
 from simulation import Configuration, OpticalModel, ft
 from run_pilot import WallDeadline
@@ -33,7 +33,7 @@ def main():
         parser.error("Require a fresh output directory below local-results")
     start = time.perf_counter()
     started = datetime.now(timezone.utc).isoformat()
-    sources = {name:digest(ROOT/name) for name in ("modal_simulation.py", "simulation.py", "run_pilot.py", "piston_basis.py")}
+    sources = {name:digest(ROOT/name) for name in ("runtime_resources.py", "modal_simulation.py", "simulation.py", "run_pilot.py", "piston_basis.py")}
     records, checks = [], []
     with WallDeadline(60):
         for domain in (6, 12, 15):
@@ -84,7 +84,7 @@ def main():
         values = [{"envelope_fx_per_pitch":x, "sinc_fx_plus_q_over_sinc_fx":float(np.sinc(x+.125)/np.sinc(x))} for x in (-.0625,0.,.0625)]
         assert np.allclose([r["sinc_fx_plus_q_over_sinc_fx"] for r in values], [1.,.9744953584044327,.949253021674191], atol=1e-12, rtol=0)
         assert all(digest(ROOT/name) == value for name,value in sources.items())
-        peak_bytes = psutil.Process().memory_info().peak_wset
+        peak_bytes = peak_rss_bytes()
         assert peak_bytes < 2_000_000_000
         result = {"status":"PASS", "started_utc":started, "elapsed_seconds":time.perf_counter()-start,
                   "peak_rss_bytes":peak_bytes, "python":sys.version, "numpy":np.__version__,

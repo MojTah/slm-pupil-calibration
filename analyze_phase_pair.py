@@ -8,6 +8,7 @@ import time
 for key in ('OMP_NUM_THREADS','OPENBLAS_NUM_THREADS','MKL_NUM_THREADS'):os.environ[key]='1'
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 from analyze_transfer import DEFAULT_RUNS,EXPECTED_GEOMETRY,B_TARGET_RUNS,load_gram,file_hash
 from gain_phase import gain_coefficients,gain_phase_range
 from phase_pair import paired_matrices
@@ -26,7 +27,7 @@ def main():
     if not out.is_relative_to((ROOT/'local-results').resolve()) or out.exists():parser.error('Require fresh study result directory')
     estimated=512*512*9*16*6+512*512*8*5
     if psutil.virtual_memory().available<2*estimated or estimated>2_000_000_000:raise MemoryError('Memory admission failed')
-    sources=['analyze_phase_pair.py','phase_pair.py','test_phase_pair.py','analyze_transfer.py','gain_phase.py','piston_basis.py','simulation.py','modal_simulation.py']
+    sources=['runtime_resources.py','analyze_phase_pair.py','phase_pair.py','test_phase_pair.py','analyze_transfer.py','gain_phase.py','piston_basis.py','simulation.py','modal_simulation.py']
     identities={n:hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest() for n in sources}
     test_hashes={}
     for test in ['gain-tests.json','phase-pair-tests.json']:
@@ -93,7 +94,7 @@ def main():
                 assert error<1e-12
                 regressions.append({'run':record['run'],'target':target,'maximum_scale_endpoint_error':error})
         if any(hashlib.sha256((ROOT/n).read_bytes().replace(b'\r\n',b'\n')).hexdigest()!=h for n,h in identities.items()):raise ValueError('Source drift')
-        peak=psutil.Process().memory_info().peak_wset
+        peak=peak_rss_bytes()
         if peak>2_000_000_000:raise MemoryError('Observed peak exceeds2GB')
         out.mkdir();snap=out/'source-snapshot';snap.mkdir()
         for n in sources+['gain-tests.json','phase-pair-tests.json']:(snap/n).write_bytes((ROOT/n).read_bytes())

@@ -16,6 +16,7 @@ for key in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS"):
 ROOT = Path(__file__).resolve().parent
 import numpy as np
 import psutil
+from runtime_resources import peak_rss_bytes
 from analyze_transfer import load_gram, B_TARGET_RUNS
 from gain_phase import gain_coefficients, gain_phase_range, gain_value
 from phase_pair import paired_matrices
@@ -101,7 +102,7 @@ def main():
         parser.error("Require a fresh output directory below local-results")
     started = datetime.now(timezone.utc).isoformat()
     start = time.perf_counter()
-    sources = ["analyze_transfer.py", "gain_phase.py", "phase_pair.py", "piston_basis.py",
+    sources = ["runtime_resources.py", "analyze_transfer.py", "gain_phase.py", "phase_pair.py", "piston_basis.py",
                "simulation.py", "modal_simulation.py", "run_pilot.py"]
     source_hashes = {name: digest(ROOT/name) for name in sources}
     identities = {}
@@ -167,7 +168,7 @@ def main():
         assert abs(d_check["max_abs_transfer_mrad"]-24.106) < .001
         for name, old in source_hashes.items():
             assert digest(ROOT/name) == old
-        peak_bytes = psutil.Process().memory_info().peak_wset
+        peak_bytes = peak_rss_bytes()
         assert peak_bytes < 2_000_000_000
         folder.mkdir(parents=True)
         for filename, data in (("readout-domain-results.csv", rows), ("flux-versus-piston.csv", flux_rows)):
