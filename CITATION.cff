@@ -5,7 +5,7 @@ title: "SLM pupil calibration transfer"
 authors:
   - family-names: Taheri
     given-names: Mojtaba
-version: 0.2.0
+version: 0.2.1
 date-released: 2026-10-16
 url: "https://github.com/MojTah/slm-pupil-calibration"
 repository-code: "https://github.com/MojTah/slm-pupil-calibration"

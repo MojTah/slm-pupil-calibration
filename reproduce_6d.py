@@ -1,4 +1,4 @@
-"""Fresh code-only 6D regeneration of the fixed readout and four Table S5 rows.
+"""Fresh code-only 6D regeneration of the matched command comparison in Supplement S8.
 
 No archived inputs are read. Outputs are local; an existing directory is refused.
 Deadlines interrupt at Python boundaries, and memory checks are not OS limits.

@@ -1,5 +1,9 @@
 # Validation
 
+## Documentation checkpoint v0.2.1, 2026-10-16
+
+The regeneration module's opening docstring now names the matched command comparison in Supplement S8 instead of an obsolete table number. This is the only Python change from v0.2.0; executable statements and numerical operators are unchanged. The full run below used the exact v0.2.0 source identities, which remain preserved. Version v0.2.1 does not claim a second full optical run.
+
 ## Code checkpoint v0.2.0 — fresh code-only driver, 2026-10-16
 
 The complete public driver ran from a source-only staging directory, with no archived input files, in **694.299 seconds** and peaked at **1,276,231,680 bytes** on Windows/Python 3.11.15. All four stages completed and all source/artifact checks passed. The generated 512-by-512 fixed readout was bit-identical to the archived reference; its SHA256 is `81fc8a8066a6af2613e8b05ca4657368bf9562ea95bb746f178fb7e6ca3f4972`. All twelve coherent-endpoint and paired-error values in the four rows of “Matched 6D/256 calibration-transfer comparison” matched exactly: maximum difference zero percentage points. The private archive was read only by a separate acceptance checker after generation. This result is environment-specific; byte-identical results are not promised across platforms or libraries.
