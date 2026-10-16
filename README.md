@@ -13,7 +13,11 @@ python -m pip install -r requirements-reproduction.txt
 python -m pytest -q -p no:cacheprovider test_modal_simulation.py test_gain_phase.py test_phase_envelope.py test_phase_pair.py test_finite_calibration.py
 ```
 
-The 91 public tests passed in the existing scientific environment; six additional resource-helper checks were run locally. A fresh dependency installation has not been tested. `runtime_resources.py` reads the historical process high-water mark using Windows `peak_wset` or Linux/macOS `getrusage`, with their respective units. Windows has native runtime evidence; Linux/macOS unit conversions were tested with simulated platform responses, without executing the optical workflow on either platform.
+Before the final reference and renderer revisions,109 public tests passed in the existing scientific environment. The affected revised components subsequently passed their focused tests and source-only tiny integration workflow; see [VALIDATION.md](VALIDATION.md) for exact versions, counts and limits. Run the complete current suite with:
+
+```powershell
+python -m pytest -q -p no:cacheprovider
+```
 
 ## Source-hold and iris diagnostic
 
@@ -38,6 +42,14 @@ No private array, configuration or provenance file is an input. Outputs always g
 
 The complete fresh run took 694.3 seconds (11.6 minutes) and peaked at 1.276 GB on the tested Windows host. Its readout and all twelve coherent-endpoint/paired-error values exactly matched the archived comparison in that environment. Allow roughly 10–15 minutes and at least 3.7 GB available RAM on a comparable host; performance and floating-point details can differ elsewhere. Before each stage the driver checks available memory against twice its conservative estimate; it stops after a measured peak above 2 GB. The whole-run deadline and per-stage deadlines (600 seconds for the reference, 300 for each modal case) interrupt at Python boundaries. These are not OS-enforced limits. A long native operation can delay interruption, and the observed-memory check does not prevent a transient peak. This command covers the table titled “Matched 6D/256 calibration-transfer comparison,” not all historical domains, plots or finite-noise tables.
 
+## Fresh manuscript calculations, tables and figures
+
+`reproduce_paper.py` builds the fixed 14-case manuscript graph from public source and scalar settings. It regenerates the sampled reference, both strip commands and opaque controls at the specified domains and angular resolutions. Its `representative-15d` profile builds only the reference and original 15D/256 case. `fresh_paper_analysis.py` contracts the resulting Grams; `reproduce_common_mask.py` adds the common-support 15D diagnostic; `render_paper.py` writes ten figures as PDF/PNG and eleven TeX table fragments. These commands require no historical numerical inputs.
+
+See [reproduction-plan.md](reproduction-plan.md) for the commands, exact coverage, resource limits and verified reuse of completed cases. Generated data stay in the new output directories chosen by the reader. The builder refuses existing destinations and source-mismatched reuse. The reference propagates only the bright field and tangent used by the fixed readout; explicit provenance distinguishes this sampled D reference from the centered-iris B target.
+
+The actual source-only 14-case small workflow, common-mask diagnostic and figure/table rendering passed their integration tests. Missing numerical cases are reported as partial coverage. A small canary verifies the workflow and does not reproduce the paper's values. The full-size representative profile subsequently completed with verified reuse of its freshly generated reference: the original 15D/256 calculation took 755.65 seconds and a separate acceptance checker reproduced its gains and selected D-target transfer values. The complete full-size 14-case graph and full-size public common-mask wrapper have not been run. See [VALIDATION.md](VALIDATION.md) for the completed evidence, preserved failures and limits. The separate 6D driver above retains its recorded full-size verification.
+
 ## Orthogonal strip-carrier comparison
 
 `OrthogonalStripModel` in `orthogonal_carrier.py` changes only the strip carrier from the original negative x direction to positive y, retaining the bright carrier, its period and the inherited optical operators. Its independent command tests run beside the existing modules without numerical input files:
@@ -46,7 +58,7 @@ The complete fresh run took 694.3 seconds (11.6 minutes) and peaked at 1.276 GB 
 python -m pytest -q -p no:cacheprovider test_orthogonal_carrier.py
 ```
 
-The study compares both commands at 6D, 12D and 15D with 256 modulation angles and the same fixed readout. The original 6D/128 propagation was reproduced bit for bit before the alternative's angular and domain checks. The standalone public regeneration above covers 6D; the wider-domain numerical arrays remain private. This is a finite-domain command comparison, not an optimized design or a hardware ranking. The alternative's raw zero-offset span is much smaller, but a fixed offset relative to B remains; the target-zero reference is still required. Its absolute gain is not established as converged.
+The study compares both commands at 6D, 12D and 15D with 256 modulation angles and the same fixed readout. The original 6D/128 propagation was reproduced bit for bit before the alternative's angular and domain checks. The earlier standalone driver covers6D. The fresh manuscript route also implements the wider-domain cases; their historical arrays remain private. This is a finite-domain command comparison, not an optimized design or a hardware ranking. The alternative's raw zero-offset span is much smaller, but a fixed offset relative to B remains; the target-zero reference is still required. Its absolute gain is not established as converged.
 
 `analyze_carrier.py` reads the original frozen inputs and the new alternative run through explicit paths. `plot_carrier_comparison.py` renders the resulting matched-grid curves and verifies their recorded hash. The alternative run must include its validated `result.json`, `SLM.npz` and `variant-provenance.json`. These numerical inputs, configurations and provenance records remain local and are not distributed. The local source-bound launch wrapper is not a public standalone CLI. With the required local archives, use fresh output directories:
 
@@ -57,7 +69,7 @@ python plot_carrier_comparison.py --summary local-results/carrier-comparison/sum
 
 ## Numerical analyses and figures
 
-This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests and fresh 6D driver above still run, but the following saved-array analysis and plotting commands cannot reproduce the paper's numerical results.
+This release publishes the code and tests. The frozen numerical input package is maintained separately and is not included here. Saved-array analysis requires its `local-results/` directory, root result summaries, test-provenance records and `DATA_MANIFEST.json` alongside the code. Those inputs were checked locally; see `VALIDATION.md`. Without them, the self-contained tests and fresh-generation routes above still run. The following historical replay commands require those private inputs.
 
 With the complete input package installed, verify its hashes and write replays to new directories:
 
