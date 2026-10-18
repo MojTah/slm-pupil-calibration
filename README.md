@@ -4,6 +4,12 @@ Scientific code for **Phase-sensitive calibration transfer in pupil masks genera
 
 The code implements a square-held-pixel scalar propagator, a three-field Gram reduction, continuous shadow-phase gain extrema, opposite-phase raw exposure pooling, and a finite calibration-photon comparison. The study asks whether calibration of an SLM-generated pupil transfers to an opaque pupil after a target zero-point reset.
 
+## Added readout and sensitivity analyses, v0.4.0
+
+The public `analysis/` scripts now cover the state-built and weighted readouts, native/sampled/slope zero offsets, area-weighted iris and radius checks, slope crop/mask variants, geometry sweep, and one assumed unswitched leakage pattern. [reproduction-current.md](reproduction-current.md) gives every input-generation chain, explicit parameters, commands and scalar checkpoints. They use the unchanged production optical operators and write only to new reader-selected outputs. Historical numerical inputs remain local.
+
+Eight focused tests exercise derivatives, pooling, input coverage, overwrite refusal and every new result family from fresh tiny optical inputs outside the checkout. No new full-size propagation or complete rendering of the added paper results was performed for this release. Scientific bounds and verification limits are stated in the command map and [VALIDATION.md](VALIDATION.md).
+
 ## Run the tests
 
 Tested on Windows with Python 3.11.15. Dependency versions are pinned in `requirements-reproduction.txt`. Use a dedicated Python environment:
@@ -91,6 +97,6 @@ The readout diagnostic compares the archived least-squares vector, a native 15D 
 
 ## Scientific limits and provenance
 
-This is one fixed-geometry, monochromatic calculation. The primary results use a fixed unweighted least-squares readout; the additional readout diagnostic tests two alternatives without optimizing them. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. A domain-native gain of one is a normalization identity, not convergence evidence. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. A separately coded 6D optical calculation reported in the revised paper agrees with the production gains within 1.2e-14 relative difference, sharing the same optical model and fixed readout. The public regeneration driver uses the production operators. Neither calculation establishes laboratory validity or instrument error-budget compliance.
+The primary calculation is monochromatic and uses one fixed pupil geometry and an unweighted least-squares readout. Added analyses test state-built and slope-map readouts and a small geometry series; they do not establish a device optimum. Transfer ratios were less sensitive to the tested domain changes than absolute gains, but the absolute-gain target remains unmet. A domain-native gain of one is a normalization identity, not convergence evidence. The finite-noise diagnostic is a local reciprocal approximation, not an exact inverse-estimator mean-square error. A separately coded 6D optical calculation reported in the revised paper agrees with the production gains within 1.2e-14 relative difference, sharing the same optical model and fixed readout. The public regeneration driver uses the production operators. Neither calculation establishes laboratory validity or instrument error-budget compliance.
 
-OpenAI Codex assisted the formulation, code, tests, literature discovery, figures and writing. Analytical fixtures, directly commanded propagation and separate contractions provide computational checks; they do not replace author review. `CITATION.cff` identifies the software version. No DOI or journal acceptance is claimed.
+OpenAI Codex assisted the formulation, code, tests, literature discovery, figures and writing. Claude assisted methodological review, additional numerical calculations, analysis code and manuscript revision, including the analyses added in v0.4.0. Analytical fixtures, directly commanded propagation and separate contractions provide computational checks; they do not replace author review. `CITATION.cff` identifies the software version. No DOI or journal acceptance is claimed.

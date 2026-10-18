@@ -1,5 +1,11 @@
 # Validation
 
+## Portable added analyses, v0.4.0, 2026-10-18
+
+Eight focused tests passed in 40.88 seconds on Windows/Python 3.11.15 with NumPy 2.4.6 and SciPy 1.17.1. The subsequent combined regression of the 91 modal/gain/phase/pair/finite-calibration/carrier/6D-driver tests plus these eight tests passed: 99 tests in 54.24 seconds. Every added entrypoint ran its help command from a fresh working directory. A real tiny source-only chain exercised native Grams at 6D/12D/15D; state-built, weighted and zero-offset contractions; sampled-reference gain derivation; area/radius and state-built iris runs; slope maps and offsets; geometry; leakage; and target-only gain mixing. Overwrite refusal and missing-domain failure were checked. Independent finite differences check normalized-image and slope derivatives; a separate raw-pooling identity and iris-translation fixture pass.
+
+The first test invocation had three temporary-directory setup errors from the sandbox default path and one overly precise hand-entered scalar oracle. The explicit project-local scratch directory and the published rounded scalar tolerance resolved those test setup issues. The production optical modules are unchanged. No historical numerical input or private configuration was copied into the release. The expected full-size checkpoints in reproduction-current.md are reported historical values, not newly regenerated results. Full-size new-family propagation, cross-platform installation and full rendering of all new results remain unverified.
+
 ## Fresh manuscript route, v0.3.0, 2026-10-16
 
 The new fixed-case builder, numerical postprocessor, common-mask calculation and renderer run from public source and scalar settings. Generated arrays and provenance remain local. The complete full-size 14-case workflow has not been executed. A tiny workflow tests interfaces and coverage, not the manuscript's numerical values.
